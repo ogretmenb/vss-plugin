@@ -579,15 +579,17 @@ public class VSSSCM extends SCM
 	 */
 	private void get(String localPath, String vssPath, TaskListener listener) throws IOException
 	{
+        IVSSDatabase database = null;
+        IVSSItem vssItem = null;
         //listener.getLogger().println("[get] Getting source code from: " + vssPath + " to " + localPath);
 		try
 		{
 			//Open database.
-			IVSSDatabase database = ClassFactory.createVSSDatabase();
+			/*IVSSDatabase*/ database = ClassFactory.createVSSDatabase();
 			database.open(serverPath, user, password);
             
 			//Get the patch to the given VSS path.
-			IVSSItem vssItem = database.vssItem(vssPath, false);
+			/*IVSSItem*/ vssItem = database.vssItem(vssPath, false);
 			int flags = VSSFlags.VSSFLAG_FORCEDIRNO.comEnumValue();
 
 			//Writable flag for the files fetched.
@@ -613,10 +615,11 @@ public class VSSSCM extends SCM
 
 			//Get the latest from vss.
             vssItem.get(new Holder<String>(localPath), flags);
-            
+
+            //Move dispose method to finally section
 			//Dispose.
-			vssItem.dispose();
-			database.dispose();
+			//vssItem.dispose();
+			//database.dispose();
 		}
 		catch(RuntimeException error)
 		{
@@ -624,7 +627,11 @@ public class VSSSCM extends SCM
 			//Some COM error.
 			throw new IOException2(error);
 		}
-	}
+        finally {
+            if(vssItem != null) vssItem.dispose();
+            if(database!= null) database.dispose();
+        }
+    }
 
 	/**
 	 * Delete the given list of files.
